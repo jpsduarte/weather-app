@@ -1,15 +1,26 @@
 ﻿@page "/weather"
 @attribute [StreamRendering]
+@rendermode InteractiveServer
+
+@inject IJSRuntime JS
+@inject HttpClient Http
+
+@using System.Globalization
+@using WeatherApp.Models
 
 <PageTitle>Weather</PageTitle>
 
 <h1>Weather</h1>
 
-<p>This component demonstrates showing data.</p>
+<p>Weather forecast based on your current location.</p>
 
-@if (forecasts == null)
+@if (error != null)
 {
-    <p><em>Loading...</em></p>
+    <p class="text-danger">@error</p>
+}
+else if (forecasts == null)
+{
+    <p><em>Getting your location and loading weather data...</em></p>
 }
 else
 {
@@ -17,19 +28,17 @@ else
         <thead>
             <tr>
                 <th>Date</th>
-                <th aria-label="Temperature in Celsius">Temp. (C)</th>
-                <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
-                <th>Summary</th>
+                <th>Temp. Min (°C)</th>
+                <th>Temp. Max (°C)</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var forecast in forecasts)
             {
                 <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
+                    <td>@forecast.Date</td>
+                    <td>@forecast.TempMin</td>
+                    <td>@forecast.TempMax</td>
                 </tr>
             }
         </tbody>
@@ -37,28 +46,61 @@ else
 }
 
 @code {
-    private WeatherForecast[]? forecasts;
+    private List<WeatherForecast>? forecasts;
+    private string? error;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Simulate asynchronous loading to demonstrate streaming rendering
-        await Task.Delay(500);
+        if (!firstRender)
+            return;
 
-        var startDate = DateOnly.FromDateTime(DateTime.Now);
-        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
-        forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        try
         {
-            Date = startDate.AddDays(index),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = summaries[Random.Shared.Next(summaries.Length)]
-        }).ToArray();
+            var location = await JS.InvokeAsync<UserLocation>("getUserLocation");
+            await LoadWeather(location.Latitude, location.Longitude);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            error = $"Unable to get location: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadWeather(double latitude, double longitude)
+    {
+        var lat = latitude.ToString(CultureInfo.InvariantCulture);
+        var lon = longitude.ToString(CultureInfo.InvariantCulture);
+
+        var url =
+            $"https://api.open-meteo.com/v1/forecast" +
+            $"?latitude={lat}" +
+            $"&longitude={lon}" +
+            $"&daily=temperature_2m_max,temperature_2m_min" +
+            $"&timezone=auto";
+
+        var response = await Http.GetFromJsonAsync<OpenMeteoResponse>(url);
+
+        forecasts = response?.Daily.Time
+            .Select((date, index) => new WeatherForecast
+            {
+                Date = date,
+                TempMin = response.Daily.Temperature_2m_Min[index],
+                TempMax = response.Daily.Temperature_2m_Max[index]
+            })
+            .ToList();
+    }
+
+    private class UserLocation
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 
     private class WeatherForecast
     {
-        public DateOnly Date { get; set; }
-        public int TemperatureC { get; set; }
-        public string? Summary { get; set; }
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        public string Date { get; set; } = string.Empty;
+        public double TempMin { get; set; }
+        public double TempMax { get; set; }
     }
 }
