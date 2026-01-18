@@ -1,13 +1,10 @@
+![CI](https://github.com/jpsduarte/weather-app/actions/workflows/ci.yml/badge.svg)
+
 # 🌤️ Weather App (Blazor + Open-Meteo)
 
-A **Blazor (.NET)** application that uses the **browser geolocation API** to automatically detect the user's location and display **real weather data** based on their current position.
+A **Blazor (.NET 8)** application that automatically detects the user's location using the **browser geolocation API** and displays **real weather data** based on their current position.
 
-This project demonstrates:
-- Browser geolocation with JavaScript
-- JS Interop in Blazor SSR
-- External API consumption
-- Asynchronous rendering and streaming
-- Clean integration between C# and JavaScript
+This project was built to demonstrate modern **Blazor SSR**, **JavaScript Interop**, and **CI with GitHub Actions**, following practices commonly required by US-based engineering roles.
 
 ---
 
@@ -18,6 +15,7 @@ This project demonstrates:
 - **C#**
 - **JavaScript (Browser Geolocation API)**
 - **Open-Meteo API** (free, no API key required)
+- **GitHub Actions (CI)**
 - **Git / GitHub**
 
 ---
@@ -29,6 +27,7 @@ This project demonstrates:
 - 📅 Shows daily minimum and maximum temperatures
 - ⏳ Asynchronous loading with streaming rendering
 - 🔒 Respects browser permission and security model (HTTPS)
+- ✅ Continuous Integration with GitHub Actions
 
 ---
 
@@ -38,7 +37,7 @@ This project uses the public **Open-Meteo API**:
 
 https://open-meteo.com/
 
-Example endpoint used:
+Example endpoint:
 
 ```text
 https://api.open-meteo.com/v1/forecast
@@ -54,6 +53,10 @@ https://api.open-meteo.com/v1/forecast
 
 ```text
 weather-app/
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 │
 ├── Components/
 │   └── Pages/
@@ -99,12 +102,29 @@ https://localhost:xxxx/weather
 
 ---
 
+## 🔄 Continuous Integration (CI)
+
+This project uses **GitHub Actions** to automatically validate code changes.
+
+The CI pipeline runs on:
+- Every push to `main`
+- Every pull request targeting `main`
+
+### Pipeline steps:
+- Restore dependencies
+- Build the project
+- Run automated tests
+
+This ensures that the application always remains in a deployable state.
+
+---
+
 ## 🧠 Key Technical Notes
 
 - JS Interop is enabled using `@rendermode InteractiveServer`
 - Geolocation is executed only after the component becomes interactive
 - Latitude and longitude are formatted using `InvariantCulture` to avoid API errors
-- The application gracefully handles permission denial and errors
+- Errors and permission denials are handled gracefully
 
 ---
 
@@ -129,4 +149,4 @@ This project is open-source and intended for learning and portfolio purposes.
 
 **João Paulo dos Santos Duarte**  
 Software Engineer | Product Manager  
-🇧🇷 Brazil
+🇧🇷 Brazil  
